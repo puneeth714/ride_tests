@@ -1,6 +1,6 @@
 'use server';
 
-import { generateTestCases as generateTestCasesFlow } from '@/ai/flows/generate-test-cases-from-context';
+import { generateTestCases as generateTestCasesFlow, GenerateTestCasesOutput } from '@/ai/flows/generate-test-cases-from-context';
 import { refineTestCaseWithAI as refineTestCaseWithAIFlow, RefineTestCaseWithAIInput } from '@/ai/flows/refine-test-case-with-ai';
 import type { TestCase } from '@/lib/types';
 import { z } from 'zod';
@@ -11,26 +11,32 @@ function toTitleCase(str: string): string {
 }
 
 
-export async function generateTestCases(context: string, projectName: string): Promise<TestCase[]> {
+export async function generateTestCases(context: string, projectName: string, userResponses?: string[]): Promise<GenerateTestCasesOutput> {
     try {
         if (!context.trim()) {
-            return [];
+            return { testCases: [], clarifyingQuestions: [] };
         }
 
         const result = await generateTestCasesFlow({
             documents: [{
                 filename: `${projectName}-context.txt`,
                 dataUri: `data:text/plain;base64,${Buffer.from(context).toString('base64')}`
-            }]
+            }],
+            userResponses
         });
 
         // Normalize priority and add a version for UI animation purposes
-        return result.map((tc, index) => ({
+        const testCases = result.testCases?.map((tc, index) => ({
             ...tc,
             id: tc.id || `${Date.now()}-${index}`,
             priority: toTitleCase(tc.priority),
             _version: 1,
-        })) as TestCase[];
+        })) as TestCase[] || [];
+
+        return {
+            testCases,
+            clarifyingQuestions: result.clarifyingQuestions || []
+        }
 
     } catch (error) {
         console.error("Error generating test cases:", error);

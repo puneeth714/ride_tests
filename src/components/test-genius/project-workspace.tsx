@@ -24,8 +24,9 @@ export function ProjectWorkspace() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
+  const [clarifyingQuestions, setClarifyingQuestions] = useState<string[]>([]);
   
-  const handleGenerate = async (context: string) => {
+  const handleGenerate = async (context: string, userResponses?: string[]) => {
     if (!context.trim()) {
       toast({
         variant: "destructive",
@@ -36,17 +37,27 @@ export function ProjectWorkspace() {
     }
 
     setIsGenerating(true);
-    setTestCases([]);
+    if (!userResponses) {
+        setTestCases([]);
+    }
     setSelectedTestCase(null);
+    setClarifyingQuestions([]);
 
     try {
-      const result = await generateTestCases(context, projectName);
-      // Simulate live generation for better UX
-      result.forEach((tc, index) => {
-        setTimeout(() => {
-          setTestCases(prev => [...prev, tc]);
-        }, index * 100);
-      });
+      const result = await generateTestCases(context, projectName, userResponses);
+      
+      if(result.clarifyingQuestions && result.clarifyingQuestions.length > 0) {
+        setClarifyingQuestions(result.clarifyingQuestions);
+      }
+
+      if (result.testCases && result.testCases.length > 0) {
+        // Simulate live generation for better UX
+        result.testCases.forEach((tc, index) => {
+          setTimeout(() => {
+            setTestCases(prev => [...prev, tc]);
+          }, index * 100);
+        });
+      }
     } catch (e) {
       const error = e instanceof Error ? e : new Error('An unknown error occurred');
       toast({
@@ -107,6 +118,7 @@ export function ProjectWorkspace() {
           selectedTestCase={selectedTestCase}
           isGenerating={isGenerating}
           onGenerate={handleGenerate}
+          clarifyingQuestions={clarifyingQuestions}
         />
         {selectedTestCase && (
           <>

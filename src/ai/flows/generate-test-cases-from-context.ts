@@ -24,6 +24,7 @@ const GenerateTestCasesInputSchema = z.object({
   apiSpecUrls: z.array(z.string().url()).optional().describe('URLs to OpenAPI (Swagger) specifications.'),
   gitRepoUrl: z.string().url().optional().describe('URL to the Git repository.'),
   gitBranch: z.string().optional().describe('The branch to analyze in the Git repository.'),
+  userResponses: z.array(z.string()).optional().describe('User responses to clarifying questions.'),
 });
 export type GenerateTestCasesInput = z.infer<typeof GenerateTestCasesInputSchema>;
 
@@ -35,7 +36,10 @@ const TestCaseSchema = z.object({
   priority: z.string().describe('Priority of the test case (e.g., High, Medium, Low).'),
 });
 
-const GenerateTestCasesOutputSchema = z.array(TestCaseSchema);
+const GenerateTestCasesOutputSchema = z.object({
+  clarifyingQuestions: z.array(z.string()).optional().describe('Questions to ask the user to get more details for generating better test cases. If you have enough information, you can leave this empty.'),
+  testCases: z.array(TestCaseSchema).optional().describe('The generated test cases.'),
+});
 export type GenerateTestCasesOutput = z.infer<typeof GenerateTestCasesOutputSchema>;
 
 export async function generateTestCases(input: GenerateTestCasesInput): Promise<GenerateTestCasesOutput> {
@@ -46,7 +50,44 @@ const prompt = ai.definePrompt({
   name: 'generateTestCasesPrompt',
   input: {schema: GenerateTestCasesInputSchema},
   output: {schema: GenerateTestCasesOutputSchema},
-  prompt: `You are an expert QA engineer responsible for generating test cases based on provided context.\n\nContext Sources:\n{{#if documents}}\nDocuments:\n{{#each documents}}\nFilename: {{{this.filename}}}\nContent: {{media url=this.dataUri}}\n{{/each}}\n{{/if}}\n\n{{#if apiSpecUrls}}\nAPI Specifications:\n{{#each apiSpecUrls}}\nURL: {{{this}}}\n{{/each}}\n{{/if}}\n\n{{#if gitRepoUrl}}\nGit Repository: {{{gitRepoUrl}}}\nBranch: {{{gitBranch}}}\n{{/if}}\n\nBased on the context above, generate a comprehensive set of test cases.  If there are ambiguities or missing details, formulate clarifying questions to ask the user. Once you have enough information, generate test cases in the following JSON format: [{id, title, steps: [], expectedResult, priority}].\n\nEnsure each test case includes a unique ID, a descriptive title, a list of steps to execute, the expected result, and a priority level.\n`,
+  prompt: `You are an expert QA engineer responsible for generating test cases based on provided context. Your goal is to create comprehensive, specific, and edge-case-oriented tests.
+
+First, analyze the provided context. 
+
+Context Sources:
+{{#if documents}}
+Documents:
+{{#each documents}}
+- Filename: {{{this.filename}}}
+  Content: {{media url=this.dataUri}}
+{{/each}}
+{{/if}}
+
+{{#if apiSpecUrls}}
+API Specifications:
+{{#each apiSpecUrls}}
+- URL: {{{this}}}
+{{/each}}
+{{/if}}
+
+{{#if gitRepoUrl}}
+Git Repository: {{{gitRepoUrl}}}
+Branch: {{{gitBranch}}}
+{{/if}}
+
+If the context is ambiguous, incomplete, or lacks detail for creating thorough test cases, you MUST formulate clarifying questions to ask the user. These questions should be designed to elicit information about edge cases, user roles, specific business rules, or platform variations.
+
+{{#if userResponses}}
+The user has provided the following answers to your previous questions:
+{{#each userResponses}}
+- {{{this}}}
+{{/each}}
+Use these answers to refine your understanding and generate better test cases.
+{{/if}}
+
+If you need more information, provide a list of 'clarifyingQuestions'. Do not generate test cases yet.
+If you have enough information to generate a good set of initial test cases, provide the 'testCases' in the specified JSON format and leave 'clarifyingQuestions' empty or null.
+`,
 });
 
 const generateTestCasesFlow = ai.defineFlow(
