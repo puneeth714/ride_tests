@@ -1,3 +1,9 @@
+import { ProjectWorkspace } from '@/components/test-genius/project-workspace';
+
 export default function Home() {
-  return <></>;
+  return (
+    <main>
+      <ProjectWorkspace />
+    </main>
+  );
 }
