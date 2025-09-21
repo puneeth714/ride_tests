@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'TestGenius AI',
+  title: 'Ride Tests Agent',
   description: 'AI-powered test case generation',
 };
 

@@ -1,4 +1,4 @@
-import { ProjectWorkspace } from '@/components/test-genius/project-workspace';
+import { ProjectWorkspace } from '@/components/ride-tests-agent/project-workspace';
 
 export default function Home() {
   return (
