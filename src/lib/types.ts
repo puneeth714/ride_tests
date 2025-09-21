@@ -8,9 +8,12 @@ export type TestCase = {
   _version?: number;
 };
 
+export type UploadedFile = {
+  filename: string;
+  dataUri: string;
+}
+
 export type ContextSource = {
-  id: string;
-  type: 'document' | 'api' | 'git';
   name: string;
-  description: string;
+  type: 'document' | 'api' | 'git' | 'text';
 };

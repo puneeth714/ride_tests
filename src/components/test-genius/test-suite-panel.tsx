@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Loader, Wand2, ChevronDown, ChevronRight, MessageSquareQuote } from 'lucide-react';
+import { Bot, Loader, Wand2, ChevronRight, MessageSquareQuote } from 'lucide-react';
 import type { TestCase } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,29 +19,12 @@ type TestSuitePanelProps = {
   onTestCaseSelect: (testCase: TestCase) => void;
   selectedTestCase: TestCase | null;
   isGenerating: boolean;
-  onGenerate: (context: string, userResponses?: string[]) => void;
+  onGenerate: (userResponses?: string[]) => void;
   clarifyingQuestions: string[];
+  context: string;
+  setContext: (context: string) => void;
 };
 
-const initialContext = `User Authentication Flow
-
-This document outlines the requirements for the user authentication flow in our application.
-
-1. User Login:
-- Users should be able to log in with their email and password.
-- Upon successful login, the user is redirected to their dashboard.
-- If login fails due to incorrect credentials, an "Invalid email or password" error should be displayed.
-- The system should lock the account for 15 minutes after 5 failed login attempts.
-
-2. User Registration:
-- New users can sign up using their name, email, and a password.
-- Password must be at least 8 characters long and contain one uppercase letter, one lowercase letter, one number, and one special character.
-- A verification email is sent to the user's email address upon registration.
-
-3. Password Reset:
-- A "Forgot Password?" link should be available on the login page.
-- Users can enter their email to receive a password reset link.
-- The link should be valid for 1 hour.`;
 
 export function TestSuitePanel({
   testCases,
@@ -50,8 +33,9 @@ export function TestSuitePanel({
   isGenerating,
   onGenerate,
   clarifyingQuestions,
+  context,
+  setContext,
 }: TestSuitePanelProps) {
-  const [context, setContext] = useState(initialContext);
   const [questionResponses, setQuestionResponses] = useState<string[]>(Array(clarifyingQuestions.length).fill(''));
 
   const handleResponseChange = (index: number, value: string) => {
@@ -61,7 +45,7 @@ export function TestSuitePanel({
   };
   
   const handleRegenerateWithAnswers = () => {
-      onGenerate(context, questionResponses);
+      onGenerate(questionResponses);
   };
 
   const priorityVariant = (priority: string) => {
@@ -88,7 +72,7 @@ export function TestSuitePanel({
             </CardContent>
           </Card>
           <div className="flex justify-end mt-4">
-            <Button size="lg" onClick={() => onGenerate(context)} disabled={isGenerating} className="bg-accent hover:bg-accent/90">
+            <Button size="lg" onClick={() => onGenerate()} disabled={isGenerating} className="bg-accent hover:bg-accent/90">
               {isGenerating ? <Loader className="animate-spin" /> : <Wand2 />}
               <span>Generate Test Cases</span>
             </Button>
@@ -101,16 +85,16 @@ export function TestSuitePanel({
       <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold tracking-tight">2. Review & Refine Test Suite</h2>
-          <Button variant="outline" onClick={() => onGenerate(context)} disabled={isGenerating}>
+          <Button variant="outline" onClick={() => onGenerate()} disabled={isGenerating}>
             {isGenerating && testCases.length === 0 ? <Loader className="animate-spin" /> : <Wand2 />}
             <span>Regenerate</span>
           </Button>
         </div>
-        <Collapsible className="mb-4 border rounded-lg">
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-3 font-medium text-lg bg-card rounded-t-lg">
+        <Collapsible className="mb-4 border rounded-lg" defaultOpen>
+          <CollapsibleTrigger className="group flex items-center justify-between w-full p-3 font-medium text-lg bg-card rounded-t-lg">
               <div className="flex items-center gap-2">
                 <ChevronRight className="h-5 w-5 transition-transform duration-200 group-data-[state=open]:rotate-90" />
-                <span>Context</span>
+                <span>Pasted Context</span>
               </div>
           </CollapsibleTrigger>
           <CollapsibleContent>

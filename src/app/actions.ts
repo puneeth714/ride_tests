@@ -1,9 +1,12 @@
 'use server';
 
-import { generateTestCases as generateTestCasesFlow, GenerateTestCasesOutput } from '@/ai/flows/generate-test-cases-from-context';
+import {
+  generateTestCases as generateTestCasesFlow,
+  GenerateTestCasesOutput,
+  GenerateTestCasesInput,
+} from '@/ai/flows/generate-test-cases-from-context';
 import { refineTestCaseWithAI as refineTestCaseWithAIFlow, RefineTestCaseWithAIInput } from '@/ai/flows/refine-test-case-with-ai';
 import type { TestCase } from '@/lib/types';
-import { z } from 'zod';
 
 function toTitleCase(str: string): string {
     if (!str) return '';
@@ -11,19 +14,9 @@ function toTitleCase(str: string): string {
 }
 
 
-export async function generateTestCases(context: string, projectName: string, userResponses?: string[]): Promise<GenerateTestCasesOutput> {
+export async function generateTestCases(input: GenerateTestCasesInput): Promise<GenerateTestCasesOutput> {
     try {
-        if (!context.trim()) {
-            return { testCases: [], clarifyingQuestions: [] };
-        }
-
-        const result = await generateTestCasesFlow({
-            documents: [{
-                filename: `${projectName}-context.txt`,
-                dataUri: `data:text/plain;base64,${Buffer.from(context).toString('base64')}`
-            }],
-            userResponses
-        });
+        const result = await generateTestCasesFlow(input);
 
         // Normalize priority and add a version for UI animation purposes
         const testCases = result.testCases?.map((tc, index) => ({
